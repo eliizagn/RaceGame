@@ -76,7 +76,7 @@ namespace RaceGame.RaceSimulation
                     break;
             }
         }
-        
+
         private void RegisterGroundTransport()
         {
             Console.WriteLine("Choose ground transport type to register (or 'exit' to finish registration):");
@@ -91,7 +91,7 @@ namespace RaceGame.RaceSimulation
                     Console.WriteLine("Ground transport registration completed.");
                     break;
                 }
-                
+
                 GroundTransport groundTransport = null;
 
                 switch (selectedGroundTransport)
@@ -124,7 +124,7 @@ namespace RaceGame.RaceSimulation
                     groundParticipants.Add(groundTransport);
                     Console.WriteLine($"{groundTransport.Type} registered for the ground race!");
                 }
-               
+
             }
         }
 
@@ -226,250 +226,159 @@ namespace RaceGame.RaceSimulation
                 }
             }
         }
+        private int CalculateRaceTime(Transport transport)
+        {
+            if (transport is GroundTransport groundTransport)
+            {
+                int totalTime = 0;
+                for (int i = 0; i < StopNumber; i++)
+                {
+                    totalTime += groundTransport.Speed(raceDistance);
+                    totalTime += groundTransport.RestDuration(i + 1);
+                }
+                return totalTime;
+            }
+            else if (transport is AirTransport airTransport)
+            {
+                int acceleration = airTransport.AccelerationCoefficient(raceDistance);
+                int totalTime = raceDistance / acceleration;
+                return totalTime;
+            }
+            return -1; // Handle other types of transport if needed
+        }
         public void RunRace()
         {
-            ChooseDistance();
             ChooseRaceType();
             RegisterTransport(Type);
-            
 
-            Console.WriteLine("Race is starting!");
-
-            switch (Type)
+            while (true)
             {
-                case RaceType.GroundOnly:
-                    RunGroundRace();
-           
+                ChooseDistance();
+                Console.WriteLine("Race is starting!");
+
+                switch (Type)
+                {
+                    case RaceType.GroundOnly:
+                        RunGroundRace();
+                        DetermineWinner(groundParticipants);
+                        break;
+                    case RaceType.AirOnly:
+                        RunAirRace();
+                        DetermineWinner(airParticipants);
+                        break;
+                    case RaceType.MixType:
+                        RunMixRace();
+                        DetermineWinner(participants);
+                        break;
+                    default:
+                        Console.WriteLine("Invalid race type");
+                        break;
+                }
+
+                Console.WriteLine("Do you want to race again? (yes/no)");
+                string playAgain = Console.ReadLine().ToLower();
+                if (playAgain != "yes")
+                {
                     break;
-                case RaceType.AirOnly:
-                    RunAirRace();
-                
-                    break;
-                case RaceType.MixType:
-                    RunMixRace();
-              
-                    break;
-                default:
-                    Console.WriteLine("Invalid race type");
-                    break;
+                }
+
             }
-           
         }
         private void RunGroundRace()
         {
-            var stops = CreateStops(); // Создаем остановки
-
+           
             foreach (var groundTransport in groundParticipants)
             {
-                int distanceCovered = 0;
-                int currentStop = 1;
+                int totalDistanceCovered = 0;
+                int totalRaceTime = 0;
 
-                while (distanceCovered < raceDistance)
+                while (totalDistanceCovered < raceDistance)
                 {
-                    int remainingDistance = raceDistance - distanceCovered;
+                    int remainingDistance = raceDistance - totalDistanceCovered;
+                    int segmentDistance = Math.Min(remainingDistance, 10); 
 
-                    int speed = groundTransport.Speed(remainingDistance);
+                    int segmentTime = groundTransport.Speed(segmentDistance);
+                    totalRaceTime += segmentTime;
 
-                    // Проверяем, нужно ли останавливаться на текущей остановке
-                    if (stops.ContainsKey(currentStop))
+                    totalDistanceCovered += segmentDistance;
+
+                    if (totalDistanceCovered < raceDistance)
                     {
-                        stops[currentStop].RestAtStop();
+                        totalRaceTime += groundTransport.RestDuration(StopNumber);
+                        StopNumber++;
                     }
-
-                    distanceCovered += speed;
-                    Console.WriteLine($"{groundTransport.Type} moved {speed} this turn. Total distance covered: {distanceCovered} out of {raceDistance}.");
-
-                    currentStop++;
                 }
-                Console.WriteLine($"{groundTransport.Type} finished the race!");
+            }
+          
+        }
+        private void RunMixRace()
+        {
+
+            // Ground transports race segment
+            foreach (var groundTransport in groundParticipants)
+            {
+                int totalDistanceCovered = 0;
+                int totalRaceTime = 0;
+
+                while (totalDistanceCovered < raceDistance)
+                {
+                    int remainingDistance = raceDistance - totalDistanceCovered;
+                    int segmentDistance = Math.Min(remainingDistance, 10); // Assume each segment distance is 10 units
+
+                    int segmentTime = groundTransport.Speed(segmentDistance);
+                    totalRaceTime += segmentTime;
+
+                    totalDistanceCovered += segmentDistance;
+
+                    if (totalDistanceCovered < raceDistance)
+                    {
+                        totalRaceTime += groundTransport.RestDuration(StopNumber);
+                        StopNumber++;
+                    }
+                }
             }
 
-            DetermineWinner();
+            // Air transports race segment
+            foreach (var airTransport in airParticipants)
+            {
+                int acceleration = airTransport.AccelerationCoefficient(raceDistance);
+                int totalRaceTime = raceDistance / acceleration;
+            }
+         
         }
         private void RunAirRace()
         {
-            var stops = CreateStops(); // Создаем остановки
-
+            
             foreach (var airTransport in airParticipants)
             {
-                int distanceCovered = 0;
-                int currentStop = 1;
-
-                while (distanceCovered < raceDistance)
-                {
-                    int remainingDistance = raceDistance - distanceCovered;
-
-                    // Вычисляем скорость на данном отрезке дистанции с учетом ускорения
-                    int acceleration = airTransport.AccelerationCoefficient(remainingDistance);
-                    int speed = airTransport.Speed(acceleration);
-
-                    // Проверяем, нужно ли останавливаться на текущей остановке
-                    if (stops.ContainsKey(currentStop) && stops[currentStop].ContainsAirTransport(airTransport))
-                    {
-                        stops[currentStop].RestAtStop();
-                    }
-
-                    distanceCovered += speed;
-                    Console.WriteLine($"{airTransport.Type} moved {speed} this turn. Total distance covered: {distanceCovered} out of {raceDistance}.");
-
-                    currentStop++;
-                }
-                Console.WriteLine($"{airTransport.Type} finished the race!");
+                int acceleration = airTransport.AccelerationCoefficient(raceDistance);
+                int totalRaceTime = raceDistance / acceleration;
             }
-
-            DetermineWinner();
+   
         }
 
-        private void RunMixRace()
+        private void DetermineWinner<T>(List<T> participants) where T : Transport
         {
-            var groundStops = CreateStops(); // Создаем остановки для наземных транспортов
-            var airStops = CreateStops(); // Создаем остановки для воздушных транспортов
-
-            int groundTransportIndex = 0;
-            int airTransportIndex = 0;
-
-            while (groundTransportIndex < groundParticipants.Count || airTransportIndex < airParticipants.Count)
-            {
-                // Проводим гонку для каждого наземного транспорта
-                if (groundTransportIndex < groundParticipants.Count)
-                {
-                    var groundTransport = groundParticipants[groundTransportIndex];
-                    RunRaceForTransport(groundTransport, groundStops);
-                    groundTransportIndex++;
-                }
-
-                // Проводим гонку для каждого воздушного транспорта
-                if (airTransportIndex < airParticipants.Count)
-                {
-                    var airTransport = airParticipants[airTransportIndex];
-                    RunRaceForTransport(airTransport, airStops);
-                    airTransportIndex++;
-                }
-            }
-
-            DetermineWinner();
-        }
-        private void RunRaceForTransport(Transport transport, Dictionary<int, RaceStop> stops)
-        {
-            int distanceCovered = 0;
-            int currentStop = 1;
-
-            while (distanceCovered < raceDistance)
-            {
-                int remainingDistance = raceDistance - distanceCovered;
-                int speed = transport switch
-                {
-                    GroundTransport ground => ground.Speed(remainingDistance),
-                    AirTransport air => air.Speed(remainingDistance),
-                    _ => 0
-                };
-
-                if (stops.ContainsKey(currentStop))
-                {
-                    if (transport is GroundTransport groundTransport && stops[currentStop].RestDurations.ContainsKey(groundTransport))
-                    {
-                        stops[currentStop].RestAtStop();
-                    }
-                    else if (transport is AirTransport airTransport && stops[currentStop].ContainsAirTransport(airTransport))
-                    {
-                        stops[currentStop].RestAtStop();
-                    }
-                }
-
-                distanceCovered += speed;
-                Console.WriteLine($"{transport.Type} moved {speed} this turn. Total distance covered: {distanceCovered} out of {raceDistance}.");
-
-                currentStop++;
-            }
-
-            Console.WriteLine($"{transport.Type} finished the race!");
-        }
-
-        private Dictionary<int, RaceStop> CreateStops()
-        {
-            // Create stops considering stop distribution and rest times for different transports
-            var stops = new Dictionary<int, RaceStop>();
-
-            // Example stop addition:
-            var stop1 = new RaceStop(1);
-            stop1.AssignRestDuration(new Centaur(), 2);
-            stop1.AssignRestDuration(new RacingShoes(), 1);
-            stops.Add(1, stop1);
-
-            var stop2 = new RaceStop(2);
-            stop2.AssignRestDuration(new RacingShoes(), 2);
-            stop2.AssignRestDuration(new WalkingBoots(), 3);
-            stops.Add(2, stop2);
-
-            // ... add other stops
-
-            return stops;
-        }
-        public class RaceStop
-        {
-            public int StopNumber { get; }
-            public Dictionary<GroundTransport, int> RestDurations { get; }
-
-            public RaceStop(int stopNumber)
-            {
-                StopNumber = stopNumber;
-                RestDurations = new Dictionary<GroundTransport, int>();
-            }
-
-            public void AssignRestDuration(GroundTransport transport, int duration)
-            {
-                RestDurations.Add(transport, duration);
-            }
-
-            public void RestAtStop()
-            {
-                Console.WriteLine($"Stop {StopNumber}: Resting...");
-
-                foreach (var kvp in RestDurations)
-                {
-                    var transport = kvp.Key;
-                    var duration = kvp.Value;
-
-                    Console.WriteLine($"{transport.Type} is resting for {duration} units of time.");
-                    // Perform rest for the specific transport here
-                }
-            }
-            public bool ContainsAirTransport(AirTransport transport)
-            {
-                // Проверка наличия воздушного транспорта на остановке
-                return RestDurations.Keys.OfType<AirTransport>().Any(airTransport => airTransport.GetType() == transport.GetType());
-            }
-        }
-
-        public void DetermineWinner()
-        {
-            // Находим победителя на основе пройденной дистанции
             Transport winner = null;
-            int maxDistance = 0;
+            int minTime = int.MaxValue;
 
             foreach (var participant in participants)
             {
-                int distance = participant switch
+                int raceTime = CalculateRaceTime(participant);
+                if (raceTime < minTime)
                 {
-                    GroundTransport ground => ground.Speed(raceDistance),
-                    AirTransport air => air.Speed(raceDistance),
-                    _ => 0,
-                };
-
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
+                    minTime = raceTime;
                     winner = participant;
                 }
             }
 
             if (winner != null)
             {
-                Console.WriteLine($"Победитель гонки: {winner.Type}! Пройдено {maxDistance} из {raceDistance}.");
+                Console.WriteLine($"The winner is {winner.Type}!");
             }
             else
             {
-                Console.WriteLine("Победитель не найден.");
+                Console.WriteLine("No winner found");
             }
         }
     }

@@ -4,21 +4,16 @@
     {
         static void Main(string[] args)
         {
-            // Создание экземпляра класса Race
             Race race = new Race();
 
-            // Выбор дистанции
-            race.ChooseDistance();
+            Console.WriteLine("Welcome to the Race Game!");
 
-            // Выбор типа гонки
-            race.ChooseRaceType();
-
-            // Регистрация участников
-            race.RegisterTransport(race.Type);
-
-            // Запуск гонки
             race.RunRace();
-          
+
+            race.ChooseDistance();
+            race.ChooseRaceType();
+            race.RegisterTransport(race.Type);
+           
         }
     }
 }
