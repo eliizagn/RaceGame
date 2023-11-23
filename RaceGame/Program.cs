@@ -1,13 +1,24 @@
-﻿// See https://aka.ms/new-console-template for more information
-using RaceGame.RaceSimulation;
+﻿namespace RaceGame.RaceSimulation
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Создание экземпляра класса Race
+            Race race = new Race();
 
+            // Выбор дистанции
+            race.ChooseDistance();
 
-    Race race = new Race();
+            // Выбор типа гонки
+            race.ChooseRaceType();
 
-    race.ChooseDistance(); // Пользователь выбирает дистанцию
+            // Регистрация участников
+            race.RegisterTransport(race.Type);
 
-    race.ChooseRaceType(); // Пользователь выбирает тип гонки
-    race.RegisterTransport(race.Type);
-    
-
-
+            // Запуск гонки
+            race.RunRace();
+          
+        }
+    }
+}

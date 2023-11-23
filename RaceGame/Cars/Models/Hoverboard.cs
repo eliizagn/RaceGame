@@ -14,7 +14,7 @@ namespace RaceGame.Cars.Models
         {
             return 130;
         }
-        public override int TimeToRest => 1;
+        public override int TimeToRest => 3;
         public override int RestDuration(int stopNumber) => stopNumber * 2;
     }
 }
