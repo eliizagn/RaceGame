@@ -19,14 +19,18 @@ namespace RaceGame.RaceSimulation
 
     public class Race
     {
+
+        private int raceDistance;
         private readonly List<Transport> participants = new List<Transport>();
         public RaceType Type { get; private set; }
         private readonly Dictionary<RaceType, List<Transport>> raceParticipants = new Dictionary<RaceType, List<Transport>>();
+        private readonly List<GroundTransport> groundParticipants = new List<GroundTransport>();
+        private readonly List<AirTransport> airParticipants = new List<AirTransport>();
 
         public void ChooseDistance()
         {
             Console.WriteLine("Choose distance");
-            int raceDistance = int.Parse(Console.ReadLine());
+            raceDistance = int.Parse(Console.ReadLine());
         }
         public void ChooseRaceType()
         {
@@ -40,234 +44,197 @@ namespace RaceGame.RaceSimulation
             switch (choice)
             {
                 case 1:
-                    SetRaceType(RaceType.GroundOnly);
+                    Type = RaceType.GroundOnly;
                     break;
                 case 2:
-                    SetRaceType(RaceType.AirOnly);
-                   
+                    Type = RaceType.AirOnly;
                     break;
                 case 3:
-                    SetRaceType(RaceType.MixType);
+                    Type = RaceType.MixType;
                     break;
                 default:
                     Console.WriteLine("Invalid choice");
                     break;
             }
         }
-        private void SetRaceType(RaceType raceType)
-{
-    Type = raceType; // Поле Type вашего класса Race, куда сохраняется выбранный тип гонки
-}
-
-        public void RegisterTransportForRace(Transport transport, RaceType raceType)
+        public void RegisterTransport(RaceType raceType)
         {
             switch (raceType)
             {
                 case RaceType.GroundOnly:
-                    if (transport is GroundTransport)
-                        RegisterForGroundRace((GroundTransport)transport);
-                    else
-                        Console.WriteLine("Invalid transport type for Ground race.");
+                    RegisterGroundTransport();
                     break;
                 case RaceType.AirOnly:
-                    if (transport is AirTransport)
-                        RegisterForAirRace((AirTransport)transport);
-                    else
-                        Console.WriteLine("Invalid transport type for Air race.");
+                    RegisterAirTransport();
                     break;
                 case RaceType.MixType:
-                    RegisterForMixRace(transport);
+                    RegisterMixTransport();
                     break;
                 default:
-                    Console.WriteLine("Invalid race type.");
+                    Console.WriteLine("Invalid race type");
                     break;
             }
         }
-
-        private void RegisterForGroundRace(GroundTransport groundTransport)
+        public void RunRace()
         {
-            Console.WriteLine($"Registered {groundTransport.Type} for Ground race.");
-            AddToRaceParticipants(RaceType.GroundOnly, groundTransport);
+            ChooseDistance(); // Пользователь выбирает дистанцию
+
+            ChooseRaceType(); // Пользователь выбирает тип гонки
+
+            RegisterTransport(Type); // Регистрируем транспорт исходя из выбранного типа гонки
         }
 
-        private void RegisterForAirRace(AirTransport airTransport)
+        private void RegisterGroundTransport()
         {
-            Console.WriteLine($"Registered {airTransport.Type} for Air race.");
-            AddToRaceParticipants(RaceType.AirOnly, airTransport);
-        }
-
-        private void RegisterForMixRace(Transport transport)
-        {
-            Console.WriteLine($"Registered {transport.Type} for Mix race.");
-            AddToRaceParticipants(RaceType.MixType, transport);
-        }
-
-        private void AddToRaceParticipants(RaceType raceType, Transport transport)
-        {
-            if (!raceParticipants.ContainsKey(raceType))
-            {
-                raceParticipants[raceType] = new List<Transport>();
-            }
-            raceParticipants[raceType].Add(transport);
-        }
-
-        public void DisplayRaceParticipants()
-        {
-            foreach (var kvp in raceParticipants)
-            {
-                Console.WriteLine($"Race Type: {kvp.Key}");
-                Console.WriteLine("Participants:");
-                foreach (var transport in kvp.Value)
-                {
-                    Console.WriteLine(transport.Type);
-                }
-                Console.WriteLine();
-            }
-        }
-        static void RegisterVehiclesforMixtype(Race raceSimulator)
-        {
-            Console.WriteLine("Register vehicles for the race:");
+            Console.WriteLine("Choose ground transport type to register (or 'exit' to finish registration):");
 
             while (true)
             {
-                Console.WriteLine("Choose vehicle type to register (or 'exit' to finish registration):");
-                Console.WriteLine("1. Centaur\n2. Chicken Legs Hut\n3. Flying Ship\n4. Hoverboard\n5. Magic Carpet\n6. Pumpkin Carriage\n7. Racing Shoes\n8. Walkin Boots\n9. Witch Broom");
+                Console.WriteLine("1. Centaur\n2. Chicken Legs Hut\n3. Hoverboard\n4. Pumpkin Carriage\n5. Racing Shoes\n6. Walkin Boots");
+                string selectedGroundTransport = Console.ReadLine();
 
-
-                string choice = Console.ReadLine();
-
-                ConsoleKeyInfo key = Console.ReadKey(true);
-
-                if (key.Key == ConsoleKey.Escape)
+                if (selectedGroundTransport.ToLower() == "exit")
                 {
-                    Console.WriteLine("\nGame Over.");
+                    Console.WriteLine("Ground transport registration completed.");
                     break;
                 }
 
+                GroundTransport groundTransport = null;
 
-                switch (choice)
+                switch (selectedGroundTransport)
                 {
                     case "1":
-                        raceSimulator.RegisterForMixRace(new Centaur());
+                        groundTransport = new Centaur();
                         break;
                     case "2":
-                        raceSimulator.RegisterForMixRace(new ChickenLegsHut());
+                        groundTransport = new ChickenLegsHut();
                         break;
                     case "3":
-                        raceSimulator.RegisterForMixRace(new FlyingShip());
+                        groundTransport = new Hoverboard();
                         break;
                     case "4":
-                        raceSimulator.RegisterForMixRace(new Hoverboard());
+                        groundTransport = new PumpkinCarriage();
                         break;
                     case "5":
-                        raceSimulator.RegisterForMixRace(new MagicCarpet());
+                        groundTransport = new RacingShoes();
                         break;
                     case "6":
-                        raceSimulator.RegisterForMixRace(new PumpkinCarriage());
+                        groundTransport = new WalkingBoots();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid choice for ground transport.");
+                        break;
+                }
+
+                if (groundTransport != null)
+                {
+                    groundParticipants.Add(groundTransport);
+                    Console.WriteLine($"{groundTransport.Type} registered for the ground race!");
+                }
+            }
+        }
+
+        private void RegisterMixTransport()
+        {
+            Console.WriteLine("Choose transport type to register (or 'exit' to finish registration):");
+
+            while (true)
+            {
+                Console.WriteLine("1. Centaur\n2. Chicken Legs Hut\n3. Flying Ship\n4. Hoverboard\n5. Magic Carpet\n6. Pumpkin Carriage\n7. Racing Shoes\n8. Walkin Boots\n9. Witch Broom");
+                string selectedTransport = Console.ReadLine();
+
+                if (selectedTransport.ToLower() == "exit")
+                {
+                    Console.WriteLine("Registration completed.");
+                    break;
+                }
+
+                Transport transport = null;
+
+                switch (selectedTransport)
+                {
+                    case "1":
+                        transport = new Centaur();
+                        break;
+                    case "2":
+                        transport = new ChickenLegsHut();
+                        break;
+                    case "3":
+                        transport = new FlyingShip();
+                        break;
+                    case "4":
+                        transport = new Hoverboard();
+                        break;
+                    case "5":
+                        transport = new MagicCarpet();
+                        break;
+                    case "6":
+                        transport = new PumpkinCarriage();
                         break;
                     case "7":
-                        raceSimulator.RegisterForMixRace(new RacingShoes());
+                        transport = new RacingShoes();
                         break;
                     case "8":
-                        raceSimulator.RegisterForMixRace(new WalkingBoots());
+                        transport = new WalkingBoots();
                         break;
                     case "9":
-                        raceSimulator.RegisterForMixRace(new WitchBroom());
+                        transport = new WitchBroom();
                         break;
                     default:
                         Console.WriteLine("Invalid choice.");
                         break;
                 }
-            }
-            static void RegisterVehiclesforAirType(Race raceSimulator)
-            {
-                Console.WriteLine("Register vehicles for the race:");
 
-                while (true)
+                if (transport != null)
                 {
-                    Console.WriteLine("Choose vehicle type to register (or 'exit' to finish registration):");
-                    Console.WriteLine("1. Flying Ship\n2. Magic Carpet\n 3. Witch Broom");
-
-
-                    string choice = Console.ReadLine();
-
-                    ConsoleKeyInfo key = Console.ReadKey(true);
-
-                    if (key.Key == ConsoleKey.Escape)
-                    {
-                        Console.WriteLine("\nGame Over.");
-                        break;
-                    }
-
-
-                    switch (choice)
-                    {
-                        case "1":
-                            raceSimulator.RegisterForMixRace(new FlyingShip());
-                            break;
-                        case "2":
-                            raceSimulator.RegisterForMixRace(new MagicCarpet());
-                            break;
-                        case "3":
-                            raceSimulator.RegisterForMixRace(new WitchBroom());
-                            break;
-                        default:
-                            Console.WriteLine("Invalid choice.");
-                            break;
-                    }
-                }
-
-            }
-            static void RegisterVehiclesforMixtype(Race raceSimulator)
-            {
-                Console.WriteLine("Register vehicles for the race:");
-
-                while (true)
-                {
-                    Console.WriteLine("Choose vehicle type to register (or 'exit' to finish registration):");
-                    Console.WriteLine("1. Centaur\n2. Chicken Legs Hut\n3. Hoverboard\n 4.Pumpkin Carriage\n 5. Racing Shoes\n 6. Walkin Boots\n");
-
-
-                    string choice = Console.ReadLine();
-
-                    ConsoleKeyInfo key = Console.ReadKey(true);
-
-                    if (key.Key == ConsoleKey.Escape)
-                    {
-                        Console.WriteLine("\nGame Over.");
-                        break;
-                    }
-
-
-                    switch (choice)
-                    {
-                        case "1":
-                            raceSimulator.RegisterForMixRace(new Centaur());
-                            break;
-                        case "2":
-                            raceSimulator.RegisterForMixRace(new ChickenLegsHut());
-                            break;
-                        case "3":
-                            raceSimulator.RegisterForMixRace(new Hoverboard());
-                            break;
-                        case "4":
-                            raceSimulator.RegisterForMixRace(new PumpkinCarriage());
-                            break;
-                        case "5":
-                            raceSimulator.RegisterForMixRace(new RacingShoes());
-                            break;
-                        case "6":
-                            raceSimulator.RegisterForMixRace(new WalkingBoots());
-                            break;
-                        default:
-                            Console.WriteLine("Invalid choice.");
-                            break;
-                    }
+                    participants.Add(transport);
+                    Console.WriteLine($"{transport.Type} registered for the race!");
                 }
             }
-            }
+        }
+        private void RegisterAirTransport()
+        {
+            Console.WriteLine("Choose air transport type to register (or 'exit' to finish registration):");
 
+            while (true)
+            {
+                Console.WriteLine("1. Flying Ship\n2. Magic Carpet\n3. Witch Broom");
+                string selectedAirTransport = Console.ReadLine();
+
+                if (selectedAirTransport.ToLower() == "exit")
+                {
+                    Console.WriteLine("Air transport registration completed.");
+                    break;
+                }
+
+                AirTransport airTransport = null;
+
+                switch (selectedAirTransport)
+                {
+                    case "1":
+                        airTransport = new FlyingShip();
+                        break;
+                    case "2":
+                        airTransport = new MagicCarpet();
+                        break;
+                    case "3":
+                        airTransport = new WitchBroom();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid choice for air transport.");
+                        break;
+                }
+
+                if (airTransport != null)
+                {
+                    airParticipants.Add(airTransport);
+                    Console.WriteLine($"{airTransport.Type} registered for the air race!");
+                }
+            }
+        }
     }
-}
+ 
+    
 
-  
+
+}
